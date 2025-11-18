@@ -11,17 +11,17 @@ export default function ApiKeyScreen() {
   }, []);
 
   const loadSavedKey = async () => {
-    const key = await getKey("OPENAI_KEY");
+    const key = await getKey("GeminiAI_KEY");
     setSavedKey(key || "");
   };
 
   const handleSave = async () => {
-    await saveKey("OPENAI_KEY", apiKey.trim());
+    await saveKey("GeminiAI_KEY", apiKey.trim());
     loadSavedKey();
   };
 
   const handleClear = async () => {
-    await saveKey("OPENAI_KEY", "");
+    await saveKey("GeminiAI_KEY", "");
     loadSavedKey();
   };
 
@@ -32,7 +32,7 @@ export default function ApiKeyScreen() {
       <TextInput
         value={apiKey}
         onChangeText={setApiKey}
-        placeholder="Enter OpenAI Key..."
+        placeholder="Enter GeminiAI Key..."
         style={styles.input}
       />
 

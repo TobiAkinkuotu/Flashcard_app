@@ -10,6 +10,7 @@ import {
   Animated,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { TabRouter } from "@react-navigation/native";
 
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -90,11 +91,11 @@ export default function Layout() {
       <View style={styles.bottomNav}>
         <NavItem route="/" icon="home-outline" label="Home" active={isActive("/")} />
 
-       <NavItem route="/account" icon="person-circle-outline" label="Account" active={isActive("/account")} />
+        <NavItem route="/account" icon="person-circle-outline" label="Account" active={isActive("/account")} />
 
-       <NavItem route="/ai" icon="sparkles-outline" label="AI" active={isActive("/ai")} />
+        <NavItem route="/ai" icon="sparkles-outline" label="AI" active={isActive("/ai")} />
 
-       <NavItem route="/docs" icon="document-text-outline" label="Docs" active={isActive("/docs")} />
+        <NavItem route="/docs" icon="document-text-outline" label="Docs" active={isActive("/docs")} />
 
       </View>
     </View>
