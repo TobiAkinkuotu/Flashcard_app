@@ -1,20 +1,27 @@
-import { useLocalSearchParams, router } from "expo-router";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-} from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+// ---------- LOAD FILE CONTENT ----------
+import { decode } from "base64-arraybuffer";
+import { File } from 'expo-file-system';
+import { fetch } from 'expo/fetch';
+import JSZip from "jszip";
 
 // ---------- TYPES ----------
 type Flashcard = {
   question: string;
   answer: string;
 };
+
+
 
 // ---------- COMPONENT ----------
 export default function FlashcardsScreen() {
@@ -27,24 +34,192 @@ export default function FlashcardsScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ---------- LOAD FILE CONTENT ----------
-  const loadFileText = async () => {
-    try {
-      const res = await fetch(fileUri);
-      return await res.text();
-    } catch (e) {
-      setError("Failed to load file.");
-      return "";
+
+  // const loadPdf = async (uri: string) => {
+  //   const pdf = await pdfjs.getDocument({ url: uri }).promise;
+  //   let fullText = '';
+
+  //   for (let i = 1; i <= pdf.numPages; i++) {
+  //     const page = await pdf.getPage(i);
+  //     const content = await page.getTextContent();
+  //     const strings = content.items.map((item: any) => item.str).join(' ');
+  //     fullText += strings + '\n';
+  //   }
+
+  //   return fullText;
+  // };
+
+  async function extractDocxText(base64: string) {
+    const uint8 = decode(base64);
+
+    const zip = await JSZip.loadAsync(uint8);
+    const xml = await zip.file("word/document.xml")?.async("string");
+
+    if (!xml) return "";
+
+    return xml
+      .replace(/<w:p[^>]*>/g, "\n")   // new paragraphs
+      .replace(/<[^>]+>/g, "")        // remove XML tags
+      .trim();
+  }
+
+
+  async function extractPdfOrImage(base64: string, mimeType: string, apiKey: string) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "gemini-2.5-pro",
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text:
+                    "Extract all readable text from the attached file. " +
+                    "If it is an image, perform OCR. Return ONLY plain text or generate text descirbing the image.",
+                },
+                {
+                  inlineData: {
+                    mimeType,
+                    data: base64,
+                  },
+                },
+              ],
+            },
+          ],
+        }),
+      }
+  );
+  const json = await res.json();
+
+  if (json.error) {
+    throw new Error("Gemini error: " + json.error.message);
+  }
+
+  const text = json?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  return text.trim();
+  }
+
+
+  // async function extractPdfOrImage(base64: string) {
+  //   const apiKey = await SecureStore.getItemAsync("GeminiAI_KEY");
+  //     if (!fileUri) throw new Error("Invalid file URI");
+  //     const file = new File(fileUri);
+  //     const base64 = await file.base64();
+
+  //     // Detect mime type using file extension
+  //     const ext = fileUri.split(".").pop()?.toLowerCase();
+  //     let mimeType = "application/octet-stream";
+
+  //     if (ext === "pdf") mimeType = "application/pdf";
+
+  //     // -------------------------------
+  //     // 2. Extract raw text from the document using Gemini
+  //     // -------------------------------
+  //     const extractRes = await fetch(
+  //       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`,
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({
+  //           model: "gemini-2.5-pro",
+  //           contents: [
+  //             {
+  //               role: "user",
+  //               parts: [
+  //                 {
+  //                   text:
+  //                     "Extract all readable text from the attached document. " +
+  //                     "The document is base64 encoded. Return ONLY the plain text with no formatting or explanations.",
+  //                 },
+  //                 {
+  //                   inlineData: {
+  //                     mimeType,
+  //                     data: base64,
+  //                   },
+  //                 },
+  //               ],
+  //             },
+  //           ],
+  //         }),
+  //       }
+  //     );
+
+  //     const extractJson = await extractRes.json();
+  //     console.log("extractJson:", JSON.stringify(extractJson, null, 2));
+
+  //     if (extractJson.error) {
+  //       throw new Error("Gemini error: " + extractJson.error.message);
+  //     }
+
+  //     const extractedText =
+  //       extractJson?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+
+  //     if (!extractedText) throw new Error("Text extraction failed");
+  //     return extractedText;
+  // }
+
+
+  /**
+ * Extracts the file extension from the file name.
+ * @param {string} name - The file name (e.g., 'document.txt', 'notes.pdf').
+ * @returns {string} The extension (e.g., 'txt', 'pdf').
+ */
+  const getFileExtension = (name: string) => {
+    // Find the last dot in the file name
+    const lastDotIndex = name.lastIndexOf('.');
+    
+    // If no dot is found or the dot is the first character (like '.htaccess'), return empty
+    if (lastDotIndex === -1 || lastDotIndex === 0) {
+      return '';
     }
+    
+    // Return the substring after the last dot, converted to lowercase
+    return name.substring(lastDotIndex + 1).toLowerCase();
   };
 
-  // ---------- SEND TO OPENAI ----------
-  const generateFlashcards = async () => {
+
+
+
+  // ---------- LOAD FILE CONTENT (FIXED) ----------
+  const loadFileText = async () => {
+    const ext = fileUri.split(".").pop()?.toLowerCase();
+    const file = new File(fileUri);
+    const base64 = await file.base64();
+    const apiKey = await SecureStore.getItemAsync("GeminiAI_KEY");
+
+    if (apiKey && ext){
+    if (ext === "txt") {
+          return file.text();
+    }
+
+    if (ext === "pdf") {
+      return await extractPdfOrImage(base64, "application/pdf", apiKey);
+    }
+
+    if (ext === "docx") {
+      return await extractDocxText(base64);
+    }
+
+    if (["jpg", "jpeg", "png", "heic", "heif", "webp", "gif"].includes(ext)) {
+          return await extractPdfOrImage(base64, `image/${ext === "jpg" ? "jpeg" : ext}`, apiKey);
+      }
+    }
+    
+  
+    throw new Error("Unsupported file type");
+  };
+
+
+    const generateFlashcards = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const apiKey = await SecureStore.getItemAsync("OPENAI_KEY");
+      const apiKey = await SecureStore.getItemAsync("GeminiAI_KEY");
 
       if (!apiKey) {
         setError("No API key saved. Please go to settings and enter your key.");
@@ -55,39 +230,59 @@ export default function FlashcardsScreen() {
       const text = await loadFileText();
       if (!text) throw new Error("No file content");
 
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content:
-                "You generate flashcards. Return ONLY a JSON array of objects with 'question' and 'answer'.",
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "gemini-2.5-flash",
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: `Turn the following document into flashcards. The final response MUST be a JSON array following the structure:
+      [
+        { "question": "...", "answer": "..." }
+      ]
+
+      DOCUMENT:
+
+      ${text}
+      `,
+                  },
+                ],
+              },
+            ],
+
+            // ❗ correct field
+            generationConfig: {
+              responseMimeType: "application/json",
             },
-            {
-              role: "user",
-              content: `Turn the following document into flashcards:\n\n${text}`,
-            },
-          ],
-        }),
-      });
+          }),
+        }
+      );
 
       const data = await response.json();
-      let raw = data.choices?.[0]?.message?.content || "";
+      console.log("data:", data);
 
+      // The API will return the raw JSON inside candidates[0].content.parts[0].text
+      let raw = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+      // Parse the model-generated JSON
       const parsed = JSON.parse(raw);
       setFlashcards(parsed);
     } catch (e) {
+      console.error(e);
       setError("Failed to generate flashcards.");
     }
 
     setLoading(false);
   };
+
 
   useEffect(() => {
     generateFlashcards();
