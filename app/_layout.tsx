@@ -32,7 +32,7 @@ export default function Layout() {
     router.push(route);
   };
 
-  return (
+return (  
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
