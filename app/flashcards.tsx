@@ -18,35 +18,43 @@ import JSZip from "jszip";
 
 
 const docDir = Paths.document;
-const saveJson = async (filename: string, data: object) => {
-  const file = new File(docDir, filename+'.json');
-  await file.create();
-  
+
+
+const saveJson = async (fileName: string, data: any) => {
+  // Create a File object
+  const file = new File(docDir, fileName + '.json');
+  await file.create();  // ensures the file exists
+
   const text = JSON.stringify(data);
   await file.write(text);
-  console.log('Saved JSON to', file.uri)
-}
+  console.log('Saved JSON to', file.uri);
+};
 
-// const readJSON = async(filename: string) => {
-//   const path = `${RNFS.DocumentDirectoryPath}/${filename}.json`;
-//   try {
-//     const content = await RNFS.readFile(path, 'utf8');
-//     return JSON.parse(content);
-//   } catch (e) {
-//     console.log("Error writing JSON:", e);
-//     return null;
-//   }
-// }
+const saveFile = async (fileName: string, data: any) => {
+  // Create a File object
+  const file = new File(docDir, fileName);
+  await file.create();  // ensures the file exists
 
-// const deleteJSON = async(filename: string) => {
-//   const path = `${RNFS.DocumentDirectoryPath}/${filename}.json`;
-//   try {
-//     await RNFS.unlink(path);
-//     console.log("Deleted: ", path);
-//   } catch (e) {
-//     console.log("Delete error:", e);
-//   }
-// }
+  await file.write(data);
+  console.log('Saved File Into App', file.uri);
+};
+
+const readJson = async (fileName: string): Promise<any | null> => {
+  const file = new File(docDir, fileName + '.json');
+  const exists = file.exists;
+  if (!exists) {
+    return null;
+  }
+
+  const content = await file.text();  // returns string
+  return JSON.parse(content);
+};
+
+const deleteJson = async (fileName: string) => {
+  const file = new File(docDir, fileName + '.json');
+  await file.delete();
+  console.log('Deleted', file.uri);
+};
 
 // ---------- TYPES ----------
 type Flashcard = {
@@ -68,19 +76,6 @@ export default function FlashcardsScreen() {
   const [error, setError] = useState("");
 
 
-  // const loadPdf = async (uri: string) => {
-  //   const pdf = await pdfjs.getDocument({ url: uri }).promise;
-  //   let fullText = '';
-
-  //   for (let i = 1; i <= pdf.numPages; i++) {
-  //     const page = await pdf.getPage(i);
-  //     const content = await page.getTextContent();
-  //     const strings = content.items.map((item: any) => item.str).join(' ');
-  //     fullText += strings + '\n';
-  //   }
-
-  //   return fullText;
-  // };
 
   async function extractDocxText(base64: string) {
     const uint8 = decode(base64);
@@ -187,9 +182,11 @@ export default function FlashcardsScreen() {
   };
 
 
-    const generateFlashcards = async () => {
+const generateFlashcards = async () => {
     setLoading(true);
     setError("");
+    const file = new File(fileUri);
+    const base64 = await file.base64();
 
     try {
       const apiKey = await SecureStore.getItemAsync("GeminiAI_KEY");
@@ -248,6 +245,7 @@ export default function FlashcardsScreen() {
       // Parse the model-generated JSON
       const parsed = JSON.parse(raw);
       saveJson(fileName, parsed);
+      await saveFile(fileName, base64)
 
 
       setFlashcards(parsed);

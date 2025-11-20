@@ -1,35 +1,145 @@
 
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView  } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { File, Paths } from 'expo-file-system';
 import { router } from "expo-router";
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+
+const docDir = Paths.document;
+let files: any[] = [];
+let filesList: any[] = [];
+
+type FileInfo = {
+  name: string;
+  uri: string;
+};
+
+type Props = {
+  name: string;
+  uri: string;
+  selected: boolean;
+  onPress: () => void;
+};
+
+const deleteFile = async (fileName: string) => {
+  const file = new File(docDir, fileName);
+  await file.delete();
+  console.log('Deleted', file.uri);
+};
+
+
+const DOUBLE_TAP_DELAY = 300; // ms
+
+const FileItem = ({ name, uri, selected, onPress }: Props) => {
+  const [lastTap, setLastTap] = React.useState<number | null>(null);
+
+  const handlePress = () => {
+    const now = Date.now();
+    if (lastTap && now - lastTap < DOUBLE_TAP_DELAY) {
+      // DOUBLE TAP DETECTED
+      Alert.alert("Opening File...", `Page has not been created to preview ${name} 😕`);
+    } else {
+      // SINGLE TAP → normal onPress
+      setLastTap(now);
+      onPress && onPress();
+    }
+  };
+
+  const getFileExtension = (uri: string) => uri.split('.').pop();
+  const icon_type =
+    getFileExtension(uri) === "json"
+      ? "layers-outline"
+      : "document-text-outline";
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      style={[styles.fileItem, selected && styles.selectedItem]}
+    >
+      <Ionicons name={icon_type} size={28} color="#0A7F42" />
+
+      <View style={{ flex: 1, marginLeft: 10 }}>
+        <Text style={styles.fileTitle}>{name}</Text>
+      </View>
+
+      {selected ? (
+        <View style={styles.checkboxActive}>
+          <Ionicons name="checkmark" size={18} color="#fff" />
+        </View>
+      ) : (
+        <View style={styles.checkboxInactive} />
+      )}
+    </Pressable>
+  );
+};
+
+const FilesList: React.FC = () => {
+  const [files, setFiles] = useState<FileInfo[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [selectedUri, setSelectedUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadFiles = async () => {
+      try {
+        const items = await docDir.list();
+
+        const filesWithInfo: FileInfo[] = await Promise.all(
+          items.map(async (item) => {
+            return {
+              name: item.name,
+              uri: item.uri,
+            };
+          })
+        );
+
+        setFiles(filesWithInfo);
+      } catch (e) {
+        console.error('Error loading files:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFiles();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (files.length === 0) {
+    return (
+      <View style={styles.center}>
+        <Text>No files found in document directory.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data={files}
+      keyExtractor={(item) => item.uri}
+      renderItem={({ item }) => (
+      <FileItem
+        name={item.name}
+        uri={item.uri}
+        selected={selectedUri === item.uri}
+        onPress={() => setSelectedUri(item.uri)}
+      />
+      )}
+    />
+  );
+};
+
+
 
 export default function ResourcesScreen() {
- const files = [
-  {
-    id: 1,
-    title: "Physics Chapter 1 Notes",
-    date: "2023-10-26",
-    icon: "document-text-outline",
-    selected: false
-  },
-  {
-    id: 2,
-    title: "Biology Chapter 5 Flashcards",
-    date: "2023-10-25",
-    icon: "layers-outline",
-    selected: true
-  },
-  {
-    id: 3,
-    title: "History Exam Prep",
-    date: "2023-10-20",
-    icon: "document-text-outline",
-    selected: false
-  }
-];
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 80 }}>
-      
+    <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Resources</Text>
@@ -59,40 +169,9 @@ export default function ResourcesScreen() {
         <TextInput placeholder="Search Files..." style={styles.searchInput} />
       </View>
 
-      {/* File Items */}
-      {/* <View style={styles.fileItem}>
-        <Ionicons name="document-text-outline" size={28} color="#333" />
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={styles.fileTitle}>Physics Chapter 1 Notes</Text>
-          <Text style={styles.fileDate}>Uploaded 2023-10-26</Text>
-        </View>
-
-        <View style={styles.checkboxInactive} />
-      </View>
-
-      <View style={[styles.fileItem, styles.selectedItem]}>
-        <Ionicons name="layers-outline" size={28} color="#0A7F42" />
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={styles.fileTitle}>Biology Chapter 5 Flashcards</Text>
-          <Text style={styles.fileDate}>Uploaded 2023-10-25</Text>
-        </View>
-
-        <View style={styles.checkboxActive}>
-          <Ionicons name="checkmark" size={18} color="#fff" />
-        </View>
-      </View>
-
-      <View style={styles.fileItem}>
-        <Ionicons name="document-text-outline" size={28} color="#333" />
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={styles.fileTitle}>History Exam Prep</Text>
-          <Text style={styles.fileDate}>Uploaded 2023-10-20</Text>
-        </View>
-
-        <View style={styles.checkboxInactive} />
-      </View> */}
-      
-    </ScrollView>
+      <FilesList />
+    </View>
+    
   );
 }
 
@@ -201,5 +280,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
