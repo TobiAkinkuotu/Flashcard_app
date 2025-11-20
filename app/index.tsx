@@ -1,22 +1,76 @@
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React from "react";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { API_BASE } from "./config";
+import { useAuth } from "./context/AuthContext";
 
 export default function Index() {
+  const router = useRouter();
+  const { logout } = useAuth?.() || { logout: async () => {} }; // fallback if context not ready
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState("Emily Johnson");
+  const [avatarUrl, setAvatarUrl] = useState("https://i.pravatar.cc/200?img=5");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const { token } = useAuth?.() || { token: null };
+
   const handleEditProfile = () => {
-    console.log("Edit Profile tapped");
+    setEditing(true);
+    setSuccess(false);
+    setError(null);
   };
 
-  const handleLogout = () => {
-    console.log("Logout tapped");
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/login");
+  };
+
+  const handleCancel = () => {
+    setEditing(false);
+    setError(null);
+  };
+
+  const handleSave = async () => {
+    if (!token) {
+      setError("No auth token set");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    try {
+      const res = await fetch(`${API_BASE}/api/account/profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name, avatarUrl }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || `Request failed (${res.status})`);
+      }
+      setSuccess(true);
+      setEditing(false);
+    } catch (e: any) {
+      setError(e.message || "Update failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,14 +86,33 @@ export default function Index() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profileContainer}>
           <View style={styles.avatarWrapper}>
-            <Image
-              source={{ uri: "https://i.pravatar.cc/200?img=5" }}
-              style={styles.avatar}
-              contentFit="cover"
-            />
+            <Image source={{ uri: avatarUrl }} style={styles.avatar} contentFit="cover" />
           </View>
-          <Text style={styles.name}>Emily Johnson</Text>
-          <Text style={styles.email}>emily.johnson@example.com</Text>
+          {editing ? (
+            <>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                placeholder="Full Name"
+                style={styles.input}
+                autoCapitalize="words"
+              />
+              <TextInput
+                value={avatarUrl}
+                onChangeText={setAvatarUrl}
+                placeholder="Avatar URL"
+                style={styles.input}
+                autoCapitalize="none"
+              />
+            </>
+          ) : (
+            <>
+              <Text style={styles.name}>{name}</Text>
+              <Text style={styles.email}>Logged in as: (email hidden)</Text>
+            </>
+          )}
+          {error && <Text style={styles.errorText}>{error}</Text>}
+          {success && <Text style={styles.successText}>Profile updated</Text>}
         </View>
 
         <View style={styles.section}>
@@ -51,13 +124,38 @@ export default function Index() {
           </View>
         </View>
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={handleEditProfile}
-          style={[styles.button, styles.buttonLight]}
-        >
-          <Text style={[styles.buttonText, styles.buttonTextDark]}>Edit Profile</Text>
-        </TouchableOpacity>
+        {editing ? (
+          <View style={{ marginBottom: 14 }}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={handleSave}
+              style={[styles.button, styles.buttonPrimary, { marginBottom: 10 }]}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Save Changes</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={handleCancel}
+              style={[styles.button, styles.buttonLight]}
+              disabled={loading}
+            >
+              <Text style={[styles.buttonText, styles.buttonTextDark]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            accessibilityRole="button"
+            onPress={handleEditProfile}
+            style={[styles.button, styles.buttonLight]}
+          >
+            <Text style={[styles.buttonText, styles.buttonTextDark]}>Edit Profile</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           accessibilityRole="button"
@@ -234,6 +332,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
     fontWeight: "700",
+  },
+  input: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    fontSize: 14,
+    color: '#222',
+  },
+  errorText: {
+    color: '#d32f2f',
+    marginTop: 4,
+    fontSize: 12,
+  },
+  successText: {
+    color: '#2e7d32',
+    marginTop: 4,
+    fontSize: 12,
   },
 });
 
