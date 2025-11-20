@@ -73,13 +73,12 @@ return (
 
       {/* Dropdown Menu */}
       {menuOpen && (
-        <View style={styles.menuContainer}>
-          <MenuItem icon="home-outline" label="Home" onPress={() => go("/")} />
-          <MenuItem icon="information-circle-outline" label="About" onPress={() => go("/about")} />
-          {/* Ionicons has 'code-slash-outline' — if you prefer another icon change it */}
-          <MenuItem icon="code-slash-outline" label="API" onPress={() => go("/api")} />
-          <MenuItem icon="document-text-outline" label="Docs" onPress={() => go("/docs")} />
-        </View>
+      <View style={styles.menuContainer}>
+      <MenuItem icon="home-outline" label="Home" onPress={() => go("/index")} />
+      <MenuItem icon="information-circle-outline" label="Account" onPress={() => go("/account")} />
+      <MenuItem icon="code-slash-outline" label="AI" onPress={() => go("/ai")} />
+       <MenuItem icon="document-text-outline" label="Docs" onPress={() => go("/docs")} />
+</View>
       )}
 
       {/* Content */}
@@ -88,16 +87,15 @@ return (
       </View>
 
       {/* Bottom navigation */}
-      <View style={styles.bottomNav}>
-        <NavItem route="/" icon="home-outline" label="Home" active={isActive("/")} />
+    <View style={styles.bottomNav}>
+  <NavItem route="/" icon="home-outline" label="Home" active={isActive("/")} />
 
-        <NavItem route="/account" icon="person-circle-outline" label="Account" active={isActive("/account")} />
+  <NavItem route="/account" icon="person-circle-outline" label="Account" active={isActive("/account")} />
 
-        <NavItem route="/ai" icon="sparkles-outline" label="AI" active={isActive("/ai")} />
+  <NavItem route="/ai" icon="sparkles-outline" label="AI" active={isActive("/ai")} />
 
-        <NavItem route="/docs" icon="document-text-outline" label="Docs" active={isActive("/docs")} />
-
-      </View>
+  <NavItem route="/docs" icon="document-text-outline" label="Docs" active={isActive("/docs")} />
+   </View>
     </View>
   );
 }
