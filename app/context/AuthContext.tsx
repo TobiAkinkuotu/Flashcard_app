@@ -5,8 +5,8 @@ import { API_BASE } from "../config";
 interface AuthContextValue {
   token: string | null;
   initialized: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string) => Promise<boolean>;
+  login: (identifier: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string, avatarUrl?: string) => Promise<boolean>;
   logout: () => Promise<void>;
 }
 
@@ -24,12 +24,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (identifier: string, password: string) => {
     try {
       const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier, password }),
       });
       if (!res.ok) return false;
       const data = await res.json();
@@ -44,12 +44,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string, avatarUrl?: string) => {
     try {
       const res = await fetch(`${API_BASE}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, avatarUrl }),
       });
       if (!res.ok) return false;
       const data = await res.json();

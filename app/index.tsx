@@ -1,15 +1,16 @@
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { API_BASE } from "./config";
@@ -17,20 +18,104 @@ import { useAuth } from "./context/AuthContext";
 
 export default function Index() {
   const router = useRouter();
-  const { logout } = useAuth?.() || { logout: async () => {} }; // fallback if context not ready
+  // Use the auth hook once; remove optional chaining fallback pattern
+  const { token, logout } = useAuth();
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState("Emily Johnson");
-  const [avatarUrl, setAvatarUrl] = useState("https://i.pravatar.cc/200?img=5");
+  const [name, setName] = useState("Loading...");
+  const [email, setEmail] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  // Removed subscription-related state for simplified backend
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
-  const { token } = useAuth?.() || { token: null };
+  // token now provided above
 
   const handleEditProfile = () => {
     setEditing(true);
     setSuccess(false);
     setError(null);
+  };
+
+  const uploadAsset = async (asset: ImagePicker.ImagePickerAsset) => {
+    if (!token) return;
+    setAvatarError(null);
+    setUploadingAvatar(true);
+    try {
+      const name = asset.fileName || 'avatar.jpg';
+      const type = asset.mimeType || 'image/jpeg';
+      const form = new FormData();
+      form.append('avatar', { uri: asset.uri, name, type } as any);
+      const res = await fetch(`${API_BASE}/api/account/avatar`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Upload failed');
+      }
+      const data = await res.json();
+      if (data.user?.avatarUrl) {
+        const raw = data.user.avatarUrl as string;
+        const full = raw.startsWith('http') ? raw : `${API_BASE}${raw}`;
+        setAvatarUrl(full);
+      } else {
+        // Fallback: refresh /me
+        const me = await fetch(`${API_BASE}/api/account/me`, { headers: { Authorization: `Bearer ${token}` } });
+        if (me.ok) {
+          const m = await me.json();
+          const raw = m.user?.avatarUrl as string | undefined;
+          if (raw) setAvatarUrl(raw.startsWith('http') ? raw : `${API_BASE}${raw}`);
+        }
+      }
+    } catch (e:any) {
+      setAvatarError(e.message || 'Upload failed');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const pickAndUploadAvatar = async () => {
+    if (!token) return;
+    setAvatarError(null);
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        setAvatarError('Permission denied');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+      });
+      if (result.canceled || !result.assets.length) return;
+      await uploadAsset(result.assets[0]);
+    } catch (e:any) {
+      setAvatarError(e.message || 'Upload failed');
+    }
+  };
+
+  const takePhotoAndUploadAvatar = async () => {
+    if (!token) return;
+    setAvatarError(null);
+    try {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) {
+        setAvatarError('Camera permission denied');
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+      });
+      if (result.canceled || !result.assets.length) return;
+      await uploadAsset(result.assets[0]);
+    } catch (e:any) {
+      setAvatarError(e.message || 'Upload failed');
+    }
   };
 
   const handleLogout = async () => {
@@ -64,6 +149,17 @@ export default function Index() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.message || `Request failed (${res.status})`);
       }
+      // Re-fetch user to update local state with any server-side modifications
+      const meRes = await fetch(`${API_BASE}/api/account/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (meRes.ok) {
+        const data = await meRes.json();
+        const u = data.user;
+        setName(u.name);
+        setEmail(u.email);
+        setAvatarUrl(u.avatarUrl || avatarUrl || null);
+      }
       setSuccess(true);
       setEditing(false);
     } catch (e: any) {
@@ -72,6 +168,27 @@ export default function Index() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!token) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/account/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const u = data.user;
+        setName(u.name);
+        setEmail(u.email);
+        setAvatarUrl(u.avatarUrl || "https://i.pravatar.cc/200?img=5");
+        // Subscription removed from backend; no longer set tier/renewal
+      } catch (e) {
+        // silent
+      }
+    };
+    fetchProfile();
+  }, [token]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -86,8 +203,20 @@ export default function Index() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profileContainer}>
           <View style={styles.avatarWrapper}>
-            <Image source={{ uri: avatarUrl }} style={styles.avatar} contentFit="cover" />
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatar} contentFit="cover" />
+            ) : (
+              <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center' }]}> 
+                <Text style={{ fontSize: 18, color: '#555' }}>?</Text>
+              </View>
+            )}
           </View>
+          <TouchableOpacity style={styles.avatarButton} onPress={pickAndUploadAvatar} disabled={uploadingAvatar}>
+            {uploadingAvatar ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.avatarButtonText}>Change Avatar</Text>}
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.avatarButton, { backgroundColor: '#607d8b' }]} onPress={takePhotoAndUploadAvatar} disabled={uploadingAvatar}>
+            {uploadingAvatar ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.avatarButtonText}>Take Photo</Text>}
+          </TouchableOpacity>
           {editing ? (
             <>
               <TextInput
@@ -97,32 +226,19 @@ export default function Index() {
                 style={styles.input}
                 autoCapitalize="words"
               />
-              <TextInput
-                value={avatarUrl}
-                onChangeText={setAvatarUrl}
-                placeholder="Avatar URL"
-                style={styles.input}
-                autoCapitalize="none"
-              />
             </>
           ) : (
             <>
               <Text style={styles.name}>{name}</Text>
-              <Text style={styles.email}>Logged in as: (email hidden)</Text>
+              {email && <Text style={styles.email}>Logged in as: {email}</Text>}
             </>
           )}
           {error && <Text style={styles.errorText}>{error}</Text>}
           {success && <Text style={styles.successText}>Profile updated</Text>}
+          {avatarError && <Text style={styles.errorText}>{avatarError}</Text>}
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Subscription</Text>
-          <View style={styles.subscriptionRow}>
-            <Ionicons name="star" size={16} color="#1e88e5" />
-            <Text style={styles.subscriptionTier}>Premium</Text>
-            <Text style={styles.subscriptionMeta}>(Renews 12/24)</Text>
-          </View>
-        </View>
+        {/* Subscription section removed */}
 
         {editing ? (
           <View style={{ marginBottom: 14 }}>
@@ -243,6 +359,18 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  avatarButton: {
+    backgroundColor: ORANGE,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  avatarButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600'
+  },
   name: {
     fontSize: 16,
     fontWeight: "700",
@@ -266,16 +394,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  subscriptionTier: {
-    color: "#1e88e5",
-    fontWeight: "700",
-    marginLeft: 6,
-  },
-  subscriptionMeta: {
-    color: "#999",
-    marginLeft: 6,
-    fontSize: 12,
-  },
+  // Removed subscription styles
   button: {
     borderRadius: 6,
     paddingVertical: 14,

@@ -35,5 +35,23 @@ npm run dev
 ## Endpoints
 - POST /api/auth/register { name,email,password,avatarUrl? }
 - POST /api/auth/login { email,password }
+- POST /api/auth/logout (client should just delete stored token)
 - GET /api/account/me (Bearer token)
 - PATCH /api/account/profile { name?, avatarUrl? } (Bearer token)
+- POST /api/account/avatar (multipart/form-data field `avatar`, Bearer token)
+
+## Avatar Upload
+You can set an avatar two ways:
+1. Provide an `avatarUrl` (remote image URL) when registering or updating profile.
+2. Upload a local image file via `POST /api/account/avatar` with a form field named `avatar`.
+
+Uploaded files are saved to `uploads/` and served at `/uploads/<filename>`. The API returns a relative path like `/uploads/example_1732212345678.jpg`. Prepend your API base (e.g. `http://localhost:4000`) for an absolute URL.
+
+Limits: max file size 2MB. Demo only (no cleaning, no malware scan, no image resizing).
+
+Sample upload (PowerShell / cmd may need escaped quotes):
+```bash
+curl -X POST http://localhost:4000/api/account/avatar \
+  -H "Authorization: Bearer <TOKEN>" \
+  -F avatar=@/path/to/local/avatar.jpg
+```
