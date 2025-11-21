@@ -4,6 +4,8 @@ import { WebView } from "react-native-webview";
 import mammoth from "mammoth";
 import { useEffect, useState } from "react";
 
+
+
 export default function ViewerScreen() {
   const { name, uri } = useLocalSearchParams();
 
@@ -17,6 +19,7 @@ export default function ViewerScreen() {
   const isDocx = fileName.toLowerCase().endsWith(".docx");
 
   const [textContent, setTextContent] = useState("");
+  const [FlashcardContent, setFCContent] = useState("");
   const [docxHtml, setDocxHtml] = useState("");
 
   // Load TXT and DOCX content
@@ -36,9 +39,22 @@ export default function ViewerScreen() {
         .catch(() => setDocxHtml("<p>Unable to open .docx file.</p>"));
 
     }
-  }, [fileUri]);
 
-  console.log('document: ', docxHtml, isDocx, fileUri);
+    if (isFlashCards && fileUri){
+      fetch(fileUri)
+        .then((res) => res.text())
+        .then((json) => router.push({
+          pathname: "/flashcard",
+          params: {
+            cards: json,
+            filename: fileName
+          },
+        }))
+        .catch(() => setFCContent("Unable to load flashcards."));
+
+
+    }
+  }, [fileUri]);
 
   return (
     <View style={styles.container}>
@@ -49,15 +65,15 @@ export default function ViewerScreen() {
       </View>
 
       {/* ===========================
-           FILE PREVIEW SECTION 
+          FILE PREVIEW SECTION 
          =========================== */}
       <View style={styles.previewBox}>
 
-        {isFlashCards && (
-            <View style={styles.container}>
-                <Text style={styles.center}>flashcards page, not yet added!</Text>
-            </View>
-        )}
+        {/* {isFlashCards && (
+            // <View style={styles.container}>
+            //     <Text style={styles.center}>flashcards page, not yet added! {FlashcardContent}</Text>
+            // </View>
+        )} */}
 
         {/* PDF Viewer */}
         {isPDF && (

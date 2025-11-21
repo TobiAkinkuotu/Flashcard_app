@@ -18,7 +18,19 @@ import JSZip from "jszip";
 
 
 const docDir = Paths.document;
+const clearDocumentDir = async () => {
+  const dir = await Paths.document.list();
 
+  for (const item of dir) {
+    // item.path is the full file path
+    const file = new File(item.uri);
+    await file.delete();
+  }
+
+  console.log("All files deleted from document directory.");
+};
+
+// clearDocumentDir()
 
 const saveJson = async (fileName: string, data: any) => {
   // Create a File object
@@ -30,15 +42,25 @@ const saveJson = async (fileName: string, data: any) => {
   console.log('Saved JSON to', file.uri);
 };
 
-const saveFile = async (fileName: string, data: any) => {
-  // Create a File object
-  const file = new File(docDir, fileName);
-  await file.create();  // ensures the file exists
+function base64ToBytes(base64: string) {
+  const binaryStr = atob(base64);
+  const len = binaryStr.length;
+  const bytes = new Uint8Array(len);
 
-  const binary = Buffer.from(data, 'base64')
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryStr.charCodeAt(i);
+  }
+  return bytes;
+}
+
+const saveFile = async (fileName: string, data: any) => {
+  const file = new File(docDir, fileName);
+  await file.create();
+
+  const binary = base64ToBytes(data);  // decode here
 
   await file.write(binary);
-  console.log('Saved File Into App', file.uri);
+  console.log("Saved File Into App:", file.uri);
 };
 
 const readJson = async (fileName: string): Promise<any | null> => {
