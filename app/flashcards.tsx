@@ -35,7 +35,9 @@ const saveFile = async (fileName: string, data: any) => {
   const file = new File(docDir, fileName);
   await file.create();  // ensures the file exists
 
-  await file.write(data);
+  const binary = Buffer.from(data, 'base64')
+
+  await file.write(binary);
   console.log('Saved File Into App', file.uri);
 };
 
@@ -245,9 +247,10 @@ const generateFlashcards = async () => {
       // Parse the model-generated JSON
       const parsed = JSON.parse(raw);
       saveJson(fileName, parsed);
+      console.log("text: ", base64.toString())
       await saveFile(fileName, base64)
 
-
+      
       setFlashcards(parsed);
     } catch (e) {
       console.error(e);

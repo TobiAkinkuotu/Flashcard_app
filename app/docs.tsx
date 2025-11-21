@@ -19,6 +19,7 @@ type Props = {
   uri: string;
   selected: boolean;
   onPress: () => void;
+  onOpen:() => void;
 };
 
 const deleteFile = async (fileName: string) => {
@@ -30,14 +31,16 @@ const deleteFile = async (fileName: string) => {
 
 const DOUBLE_TAP_DELAY = 300; // ms
 
-const FileItem = ({ name, uri, selected, onPress }: Props) => {
+const FileItem = ({ name, uri, selected, onPress, onOpen }: Props) => {
   const [lastTap, setLastTap] = React.useState<number | null>(null);
 
   const handlePress = () => {
     const now = Date.now();
     if (lastTap && now - lastTap < DOUBLE_TAP_DELAY) {
       // DOUBLE TAP DETECTED
-      Alert.alert("Opening File...", `Page has not been created to preview ${name} 😕`);
+      // Alert.alert("Opening File...", `Page has not been created to preview ${name} 😕`);
+      console.log("opening document... uri: ", uri)
+      onOpen();
     } else {
       // SINGLE TAP → normal onPress
       setLastTap(now);
@@ -129,6 +132,12 @@ const FilesList: React.FC = () => {
         uri={item.uri}
         selected={selectedUri === item.uri}
         onPress={() => setSelectedUri(item.uri)}
+        onOpen={()=>  router.push({
+            pathname: "/file_viewer",
+            params: {
+              name: item.name, 
+              uri: item.uri},
+          })}
       />
       )}
     />
