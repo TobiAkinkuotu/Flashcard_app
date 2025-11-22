@@ -1,22 +1,9 @@
-// app/flashcard.tsx
+import { useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import {
-  Alert,
-  Keyboard,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View, } from "react-native";
 import { updateUserProgress } from "../lib/ProgressUpdater";
 
-const flashcards = [
-  { question: "5 + 3", answer: "8" },
-  { question: "10 - 4", answer: "6" },
-  { question: "7 × 6", answer: "42" },
-  { question: "12 ÷ 3", answer: "4" },
-];
+
 
 export default function FlashcardsPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -24,8 +11,21 @@ export default function FlashcardsPage() {
   const [checked, setChecked] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [answeredCount, setAnsweredCount] = useState(0);
+  const { cards, filename } = useLocalSearchParams();
 
-  const userId = "user876";
+  const defaultFlashcards = [
+  { question: "5 + 3", answer: "8" },
+  { question: "10 - 4", answer: "6" },
+  { question: "7 × 6", answer: "42" },
+  { question: "12 ÷ 3", answer: "4" },
+];
+
+  const userId = "user876"; // match Firebase rule
+const cardsString = Array.isArray(cards) ? cards[0] : cards;
+const flashcards = cardsString ? JSON.parse(cardsString) : defaultFlashcards;
+
+
+
   const card = flashcards[currentIndex];
 
   const checkAnswer = () => {
@@ -76,7 +76,7 @@ await updateUserProgress(userId, correctCount, answeredCount);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Basic Math Flashcards</Text>
+      <Text style={styles.title}>{filename} Flashcards</Text>
 
       <View style={styles.card}>
         <Text style={styles.question}>{card.question}</Text>

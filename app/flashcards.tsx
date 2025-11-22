@@ -11,9 +11,74 @@ import {
 } from "react-native";
 // ---------- LOAD FILE CONTENT ----------
 import { decode } from "base64-arraybuffer";
-import { File } from 'expo-file-system';
+import { File, Directory, Paths } from 'expo-file-system';
 import { fetch } from 'expo/fetch';
 import JSZip from "jszip";
+// import RNFS from 'react-native-fs';
+
+
+const docDir = Paths.document;
+const clearDocumentDir = async () => {
+  const dir = await Paths.document.list();
+
+  for (const item of dir) {
+    // item.path is the full file path
+    const file = new File(item.uri);
+    await file.delete();
+  }
+
+  console.log("All files deleted from document directory.");
+};
+
+// clearDocumentDir()
+
+const saveJson = async (fileName: string, data: any) => {
+  // Create a File object
+  const file = new File(docDir, fileName + '.json');
+  await file.create();  // ensures the file exists
+
+  const text = JSON.stringify(data);
+  await file.write(text);
+  console.log('Saved JSON to', file.uri);
+};
+
+function base64ToBytes(base64: string) {
+  const binaryStr = atob(base64);
+  const len = binaryStr.length;
+  const bytes = new Uint8Array(len);
+
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryStr.charCodeAt(i);
+  }
+  return bytes;
+}
+
+const saveFile = async (fileName: string, data: any) => {
+  const file = new File(docDir, fileName);
+  await file.create();
+
+  const binary = base64ToBytes(data);  // decode here
+
+  await file.write(binary);
+  console.log("Saved File Into App:", file.uri);
+};
+
+const readJson = async (fileName: string): Promise<any | null> => {
+  const file = new File(docDir, fileName + '.json');
+  const exists = file.exists;
+  if (!exists) {
+    return null;
+  }
+
+  const content = await file.text();  // returns string
+  return JSON.parse(content);
+};
+
+const deleteJson = async (fileName: string) => {
+  const file = new File(docDir, fileName + '.json');
+  await file.delete();
+  console.log('Deleted', file.uri);
+};
 
 // ---------- TYPES ----------
 type Flashcard = {
@@ -35,19 +100,6 @@ export default function FlashcardsScreen() {
   const [error, setError] = useState("");
 
 
-  // const loadPdf = async (uri: string) => {
-  //   const pdf = await pdfjs.getDocument({ url: uri }).promise;
-  //   let fullText = '';
-
-  //   for (let i = 1; i <= pdf.numPages; i++) {
-  //     const page = await pdf.getPage(i);
-  //     const content = await page.getTextContent();
-  //     const strings = content.items.map((item: any) => item.str).join(' ');
-  //     fullText += strings + '\n';
-  //   }
-
-  //   return fullText;
-  // };
 
   async function extractDocxText(base64: string) {
     const uint8 = decode(base64);
@@ -103,66 +155,6 @@ export default function FlashcardsScreen() {
   return text.trim();
   }
 
-
-  // async function extractPdfOrImage(base64: string) {
-  //   const apiKey = await SecureStore.getItemAsync("GeminiAI_KEY");
-  //     if (!fileUri) throw new Error("Invalid file URI");
-  //     const file = new File(fileUri);
-  //     const base64 = await file.base64();
-
-  //     // Detect mime type using file extension
-  //     const ext = fileUri.split(".").pop()?.toLowerCase();
-  //     let mimeType = "application/octet-stream";
-
-  //     if (ext === "pdf") mimeType = "application/pdf";
-
-  //     // -------------------------------
-  //     // 2. Extract raw text from the document using Gemini
-  //     // -------------------------------
-  //     const extractRes = await fetch(
-  //       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`,
-  //       {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({
-  //           model: "gemini-2.5-pro",
-  //           contents: [
-  //             {
-  //               role: "user",
-  //               parts: [
-  //                 {
-  //                   text:
-  //                     "Extract all readable text from the attached document. " +
-  //                     "The document is base64 encoded. Return ONLY the plain text with no formatting or explanations.",
-  //                 },
-  //                 {
-  //                   inlineData: {
-  //                     mimeType,
-  //                     data: base64,
-  //                   },
-  //                 },
-  //               ],
-  //             },
-  //           ],
-  //         }),
-  //       }
-  //     );
-
-  //     const extractJson = await extractRes.json();
-  //     console.log("extractJson:", JSON.stringify(extractJson, null, 2));
-
-  //     if (extractJson.error) {
-  //       throw new Error("Gemini error: " + extractJson.error.message);
-  //     }
-
-  //     const extractedText =
-  //       extractJson?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-
-  //     if (!extractedText) throw new Error("Text extraction failed");
-  //     return extractedText;
-  // }
-
-
   /**
  * Extracts the file extension from the file name.
  * @param {string} name - The file name (e.g., 'document.txt', 'notes.pdf').
@@ -214,9 +206,11 @@ export default function FlashcardsScreen() {
   };
 
 
-    const generateFlashcards = async () => {
+const generateFlashcards = async () => {
     setLoading(true);
     setError("");
+    const file = new File(fileUri);
+    const base64 = await file.base64();
 
     try {
       const apiKey = await SecureStore.getItemAsync("GeminiAI_KEY");
@@ -274,6 +268,11 @@ export default function FlashcardsScreen() {
 
       // Parse the model-generated JSON
       const parsed = JSON.parse(raw);
+      saveJson(fileName, parsed);
+      console.log("text: ", base64.toString())
+      await saveFile(fileName, base64)
+
+      
       setFlashcards(parsed);
     } catch (e) {
       console.error(e);

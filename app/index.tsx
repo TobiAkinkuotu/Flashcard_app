@@ -1,181 +1,129 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Link } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ImageBackground,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { getUserProgress, Progress } from "./ProgressUpdater";
 
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
+export default function App() {
+  const [progress, setProgress] = useState<Progress>({
+    completed: 0,
+    accuracy: 0,
+    streak: 0,
+    totalCorrectAnswers: 0,
+totalQuestionsAnswered:0,
 
-export default function ResourcesScreen() {
+  });
+
+  const userId = "user876"; // match your Firestore rule
+
+  // Fetch progress on mount
+  useEffect(() => {
+    const fetchProgress = async () => {
+      const data = await getUserProgress(userId);
+      if (data) setProgress(data);
+    };
+    fetchProgress();
+  }, []);
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 80 }}>
-      
-      {/* Header Section */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Resources</Text>
-        <Text style={styles.headerSubtitle}>Upload and learn from Resources</Text>
-      </View>
-
-      {/* Upload Document Box */}
-      <TouchableOpacity
-        style={styles.uploadBox}
-        onPress={() => router.push("/uploads")}
-      >
-        <MaterialIcons name="upload-file" size={40} color="#0077B6" />
-        <Text style={styles.uploadLabel}>Upload New Document</Text>
-      </TouchableOpacity>
-
-      {/* Convert Button */}
-      <TouchableOpacity
-        style={styles.convertButton}
-        onPress={() => router.push("/flashcards")}
-      >
-        <Text style={styles.convertText}>Convert Selected to FlashCards</Text>
-      </TouchableOpacity>
-
-      {/* Search Bar */}
-      <View style={styles.searchBox}>
-        <Ionicons name="search" size={20} color="#999" style={{ marginRight: 6 }} />
-        <TextInput placeholder="Search Files..." style={styles.searchInput} />
-      </View>
-
-      {/* File Items */}
-      <View style={styles.fileItem}>
-        <Ionicons name="document-text-outline" size={28} color="#333" />
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={styles.fileTitle}>Physics Chapter 1 Notes</Text>
-          <Text style={styles.fileDate}>Uploaded 2023-10-26</Text>
+    <ImageBackground
+      source={require("../assets/images/background.png")}
+      style={styles.container}
+      resizeMode="cover"
+    >
+      <View style={{ flex: 1 }}>
+        {/* Orange header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Home</Text>
+          <Text></Text>
         </View>
 
-        <View style={styles.checkboxInactive} />
+        <ScrollView style={styles.content} contentContainerStyle={{ padding: 16 }}>
+          <Text style={styles.welcome}>Welcome back, Scholar!</Text>
+          <Text style={styles.smallText}>Your Progress</Text>
+
+          {/* Progress cards */}
+          <View style={styles.progressRow}>
+            <View style={styles.progressCard}>
+              <Text style={styles.progressValue}>{progress.completed}</Text>
+              <Text style={styles.progressLabel}>Completed</Text>
+            </View>
+            <View style={styles.progressCard}>
+              <Text style={styles.progressValue}>{progress.accuracy}%</Text>
+              <Text style={styles.progressLabel}>Accuracy</Text>
+            </View>
+            <View style={styles.progressCard}>
+              <Text style={styles.progressValue}>{progress.streak} Days</Text>
+              <Text style={styles.progressLabel}>Streak</Text>
+            </View>
+          </View>
+
+          {/* Recommended section */}
+          <Text style={styles.sectionTitle}>Recommended for you</Text>
+
+          <Link href="/flashcard" style={styles.card}>
+            <View style={styles.cardColorBox} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>Basic Math Flashcards</Text>
+              <Text style={styles.cardSubtitle}>
+                Addition, Subtraction, Multiplication
+              </Text>
+            </View>
+          </Link>
+          <Link href="/history" style={styles.card}>
+          
+            <View style={styles.cardColorBox} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>History Quiz: World War II</Text>
+              <Text style={styles.cardSubtitle}>
+                Test your knowledge on key events.
+              </Text>
+          </View>
+           </Link>
+
+          {/* Previous activities */}
+          <Text style={styles.sectionTitle}>
+            <Ionicons name="timer-outline" size={20} /> Previous Activities
+          </Text>
+
+          <View style={styles.activityCard}>
+            <Text style={styles.activityTitle}>Physics Chapter 1 Notes</Text>
+            <Text style={styles.activitySubtitle}>Page 1/30</Text>
+          </View>
+
+          <View style={styles.activityCard}>
+            <Text style={styles.activityTitle}>English Vocab FlashCard: Level 1</Text>
+            <Text style={styles.activitySubtitle}>Completed 3 days ago</Text>
+          </View>
+        </ScrollView>
       </View>
-
-      <View style={[styles.fileItem, styles.selectedItem]}>
-        <Ionicons name="layers-outline" size={28} color="#0A7F42" />
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={styles.fileTitle}>Biology Chapter 5 Flashcards</Text>
-          <Text style={styles.fileDate}>Uploaded 2023-10-25</Text>
-        </View>
-
-        <View style={styles.checkboxActive}>
-          <Ionicons name="checkmark" size={18} color="#fff" />
-        </View>
-      </View>
-
-      <View style={styles.fileItem}>
-        <Ionicons name="document-text-outline" size={28} color="#333" />
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={styles.fileTitle}>History Exam Prep</Text>
-          <Text style={styles.fileDate}>Uploaded 2023-10-20</Text>
-        </View>
-
-        <View style={styles.checkboxInactive} />
-      </View>
-    </ScrollView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    padding: 16,
-  },
-
-  header: {
-    marginBottom: 20,
-  },
-  headerTitle: {
-    color: "#E30613",
-    fontSize: 22,
-    fontWeight: "bold",
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "#777",
-    marginTop: 2,
-  },
-
-  uploadBox: {
-    backgroundColor: "#E8F6FF",
-    paddingVertical: 35,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  uploadLabel: {
-    marginTop: 10,
-    color: "#0077B6",
-    fontWeight: "600",
-  },
-
-  convertButton: {
-    backgroundColor: "#28C7DA",
-    padding: 14,
-    borderRadius: 10,
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  convertText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-  },
-
-  fileItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8F8F8",
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: "#e3e3e3",
-  },
-
-  selectedItem: {
-    borderColor: "#0A7F42",
-    backgroundColor: "#E6F8EF",
-  },
-
-  fileTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111",
-  },
-  fileDate: {
-    color: "#777",
-    fontSize: 12,
-    marginTop: 2,
-  },
-
-  checkboxInactive: {
-    width: 22,
-    height: 22,
-    borderWidth: 2,
-    borderColor: "#aaa",
-    borderRadius: 4,
-  },
-
-  checkboxActive: {
-    width: 22,
-    height: 22,
-    backgroundColor: "#0A7F42",
-    borderRadius: 4,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  container: { flex: 1, width: "100%", height: "100%" },
+  header: { backgroundColor: "#FF9800", paddingTop: 40, paddingBottom: 26, paddingHorizontal: 16 },
+  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "bold" },
+  content: { flex: 1 },
+  welcome: { fontSize: 18, fontWeight: "bold", marginBottom: 4 },
+  smallText: { fontSize: 12, color: "#777", marginBottom: 8 },
+  progressRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 16 },
+  progressCard: { flex: 1, backgroundColor: "#F5F5F5", padding: 12, borderRadius: 8, alignItems: "center", marginHorizontal: 4 },
+  progressValue: { fontSize: 18, fontWeight: "bold" },
+  progressLabel: { fontSize: 12, color: "#555", marginTop: 4 },
+  sectionTitle: { fontSize: 16, fontWeight: "bold", marginBottom: 8, marginTop: 8 },
+  card: { flexDirection: "row", borderWidth: 1, borderColor: "#DDD", borderRadius: 8, padding: 12, marginBottom: 8, alignItems: "center" },
+  cardColorBox: { width: 40, height: 40, borderRadius: 6, backgroundColor: "#00BCD4", marginRight: 12 },
+  cardTitle: { fontWeight: "bold", marginBottom: 4 },
+  cardSubtitle: { fontSize: 12, color: "#555" },
+  activityCard: { borderWidth: 1, borderColor: "#EEE", borderRadius: 8, padding: 12, marginBottom: 8 },
+  activityTitle: { fontWeight: "bold" },
+  activitySubtitle: { fontSize: 12, color: "#777", marginTop: 4 },
 });
