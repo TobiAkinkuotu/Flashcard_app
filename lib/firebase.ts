@@ -1,11 +1,11 @@
 // Export Firestore DB
 
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
+import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import { getFirestore, Firestore } from "firebase/firestore";
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyC8m9jy_vcMLjSa0WBefh4kuE4CepHRyZc",
@@ -16,6 +16,18 @@ const firebaseConfig = {
   appId: "1:983016849872:web:b8218572a4e92c6bd079d5"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+
+
+
+
+// ✅ Initialize Firebase once
+let app: FirebaseApp;
+
+if (!getApps().length) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApps()[0];
+}
+
+// ✅ This MUST be a Firestore instance
+export const db: Firestore = getFirestore(app);

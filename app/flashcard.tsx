@@ -1,8 +1,16 @@
+// app/flashcard.tsx
 import React, { useState } from "react";
-import {Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View,} from "react-native";
-import { updateUserProgress } from "./ProgressUpdater";
+import {
+  Alert,
+  Keyboard,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { updateUserProgress } from "../lib/ProgressUpdater";
 
-// Flashcard data
 const flashcards = [
   { question: "5 + 3", answer: "8" },
   { question: "10 - 4", answer: "6" },
@@ -17,48 +25,47 @@ export default function FlashcardsPage() {
   const [correctCount, setCorrectCount] = useState(0);
   const [answeredCount, setAnsweredCount] = useState(0);
 
-  const userId = "user876"; // match Firebase rule
-
+  const userId = "user876";
   const card = flashcards[currentIndex];
 
-  // Check the user's answer
   const checkAnswer = () => {
+    if (checked) return;
     Keyboard.dismiss();
     setChecked(true);
-    setAnsweredCount(answeredCount + 1);
+    setAnsweredCount(prev => prev + 1);
 
     if (userAnswer.trim() === card.answer) {
-      setCorrectCount(correctCount + 1);
+      setCorrectCount(prev => prev + 1);
     }
   };
 
-  // Go to next card or finish quiz
   const nextCard = async () => {
     Keyboard.dismiss();
+    const isLast = currentIndex === flashcards.length - 1;
 
-    // Last card → save progress
-    if (currentIndex === flashcards.length - 1) {
+    if (isLast) {
       try {
+        console.log("📊 Finishing quiz with:", { correctCount, answeredCount });
+await updateUserProgress(userId, correctCount, answeredCount);
+
         await updateUserProgress(userId, correctCount, answeredCount);
         Alert.alert(
-          "Quiz Completed!",
-          `Progress saved!\nScore: ${correctCount}/${answeredCount}`,
+          "Flashcards Completed!",
+          `Score: ${correctCount}/${answeredCount}`,
           [{ text: "OK", onPress: restartQuiz }]
         );
       } catch (error) {
-        console.error("Error saving progress:", error);
-        Alert.alert("Error", "Could not save progress. Try again.");
+        console.error(error);
+        Alert.alert("Error", "Could not save progress.");
       }
       return;
     }
 
-    // Move to next card
-    setCurrentIndex(currentIndex + 1);
+    setCurrentIndex(prev => prev + 1);
     setUserAnswer("");
     setChecked(false);
   };
 
-  // Restart the quiz
   const restartQuiz = () => {
     setCurrentIndex(0);
     setUserAnswer("");
@@ -80,7 +87,7 @@ export default function FlashcardsPage() {
           value={userAnswer}
           onChangeText={setUserAnswer}
           keyboardType="numeric"
-          editable={!checked} // disable input after checking
+          editable={!checked}
         />
 
         {!checked ? (
@@ -89,10 +96,7 @@ export default function FlashcardsPage() {
           </TouchableOpacity>
         ) : (
           <View>
-            <Text style={styles.correctLabel}>
-              Correct answer: {card.answer}
-            </Text>
-
+            <Text style={styles.correctLabel}>Correct answer: {card.answer}</Text>
             <TouchableOpacity style={styles.button} onPress={nextCard}>
               <Text style={styles.buttonText}>
                 {currentIndex === flashcards.length - 1 ? "Finish Quiz" : "Next"}
@@ -105,18 +109,27 @@ export default function FlashcardsPage() {
       <Text style={styles.counter}>
         Card {currentIndex + 1} / {flashcards.length}
       </Text>
+      <Text style={styles.counter}>
+        Correct: {correctCount} / Answered: {answeredCount}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
-  title: { fontSize: 24, marginBottom: 20, fontWeight: "bold" },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   card: { width: "80%", padding: 20, backgroundColor: "#fff", borderRadius: 10, elevation: 2 },
   question: { fontSize: 28, fontWeight: "bold", textAlign: "center" },
   input: { borderWidth: 1, borderColor: "#ccc", padding: 10, borderRadius: 8, marginTop: 20 },
-  button: { backgroundColor: "#2196f3", padding: 12, borderRadius: 8, marginTop: 20, alignItems: "center" },
-  buttonText: { color: "white", fontWeight: "bold" },
+  button: {
+    backgroundColor: "#FF9800",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 20,
+    alignItems: "center",
+  },
+  buttonText: { color: "#fff", fontWeight: "bold" },
   correctLabel: { fontSize: 18, marginTop: 10, textAlign: "center" },
-  counter: { marginTop: 20, fontSize: 14 },
+  counter: { marginTop: 10, fontSize: 14 },
 });
