@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 
 
 export default function ViewerScreen() {
-  const { name, uri } = useLocalSearchParams();
+  const { name, uri, data} = useLocalSearchParams();
 
   const fileName = typeof name === "string" ? name : "";
   const fileUri = typeof uri === "string" ? uri : "";
@@ -18,43 +18,67 @@ export default function ViewerScreen() {
   const isText = fileName.toLowerCase().endsWith(".txt");
   const isDocx = fileName.toLowerCase().endsWith(".docx");
 
-  const [textContent, setTextContent] = useState("");
+  let [textContent, setTextContent] = useState("");
   const [FlashcardContent, setFCContent] = useState("");
   const [docxHtml, setDocxHtml] = useState("");
+  let fileOpened = false;
 
   // Load TXT and DOCX content
+  if (!data){
   useEffect(() => {
-    if (isText && fileUri) {
-      fetch(fileUri)
-        .then((res) => res.text())
-        .then((txt) => setTextContent(txt))
-        .catch(() => setTextContent("Unable to load .txt file."));
-    }
+      if (isText && fileUri) {
+        fetch(fileUri)
+          .then((res) => res.text())
+          .then((txt) => setTextContent(txt))
+          .catch(() => setTextContent("Unable to load .txt file."));
+      }
 
-    if (isDocx && fileUri) {
-      fetch(fileUri)
-        .then((res) => res.arrayBuffer())
-        .then((buffer) => mammoth.convertToHtml({ arrayBuffer: buffer }))
-        .then((result) => setDocxHtml(result.value))
-        .catch(() => setDocxHtml("<p>Unable to open .docx file.</p>"));
+      if (isDocx && fileUri) {
+        fetch(fileUri)
+          .then((res) => res.arrayBuffer())
+          .then((buffer) => mammoth.convertToHtml({ arrayBuffer: buffer }))
+          .then((result) => setDocxHtml(result.value))
+          .catch(() => setDocxHtml("<p>Unable to open .docx file.</p>"));
 
-    }
+      }
 
-    if (isFlashCards && fileUri){
-      fetch(fileUri)
-        .then((res) => res.text())
-        .then((json) => router.push({
+      if (isFlashCards && fileUri){
+        fetch(fileUri)
+          .then((res) => res.text())
+          .then((json) => router.push({
+            pathname: "/flashcard_",
+            params: {
+              cards: json,
+              filename: fileName
+            },
+          }))
+          .catch(() => setFCContent("Unable to load flashcards."));
+
+
+      }
+    }, [fileUri]);
+  }else{
+    if (!fileOpened){
+      fileOpened = true
+      console.log("sample data given...")
+      if (isText){
+        console.log(data)
+        textContent = data;
+      }
+
+      if (isFlashCards){
+        router.push({
           pathname: "/flashcard_",
           params: {
-            cards: json,
+            cards: data,
             filename: fileName
           },
-        }))
-        .catch(() => setFCContent("Unable to load flashcards."));
-
-
+      })
     }
-  }, [fileUri]);
+    
+    }
+  }
+  
 
   return (
     <View style={styles.container}>

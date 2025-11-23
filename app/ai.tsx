@@ -21,6 +21,8 @@ import {
 import * as Clipboard from 'expo-clipboard'; 
 // ---------------------------------
 
+
+// Original code
 // --- TYPE DEFINITIONS ---
 interface Message {
   id: number;
@@ -251,9 +253,11 @@ export default function Home() {
               ))}
             </ScrollView>
 
+
             {/* Input at bottom */}
             <View style={styles.inputWrapper}>
               <View style={styles.inputContainer}>
+
                 <TextInput
                   placeholder="Type your message..."
                   placeholderTextColor="#797979"
@@ -265,11 +269,13 @@ export default function Home() {
                   selectionColor="#1E90FF"
                   editable={!isLoading}
                   onContentSizeChange={handleContentSizeChange} 
-
-                  {...{ showsVerticalScrollIndicator: true }} 
+                  
+                  
+                  // Platform-specific props can remain as spread or be simplified
                   {...(Platform.OS === 'ios' && { indicatorStyle: 'black' })}
                   {...(Platform.OS === 'android' && { persistentScrollbar: true })}
-                />
+/>
+
                 <TouchableOpacity 
                   style={styles.sendButton}
                   onPress={handleSend}
@@ -404,15 +410,18 @@ const styles = StyleSheet.create({
     elevation: 2,
     minHeight: 50,
   },
+  
   textbox: {
     flex: 1,
     fontSize: 16,
-    textAlignVertical: "top",
-    paddingVertical: 12,
+    // Ensure text starts at the top for multi-line input
+    textAlignVertical: "top", 
+    paddingVertical: 12, // Standardized vertical padding
     paddingLeft: 10,
     maxHeight: MAX_INPUT_HEIGHT,
-    minHeight: MIN_INPUT_HEIGHT,
+    minHeight: MIN_INPUT_HEIGHT, // Ensure it starts at MIN_INPUT_HEIGHT
   },
+
   sendButton: {
     width: 40,
     height: 40,

@@ -60,7 +60,7 @@ const FileItem = ({ name, uri, selected, onPress, onOpen, onDelete }: Props) => 
   const getFileExtension = (uri: string) => uri.split(".").pop();
   let FlashCardName = 
   getFileExtension(uri) === "json"
-      ? name.split(".")[0] + " • FlashCard"
+      ? name.split(".")[0] + " (FlashCards)"
       : name;
   
   const icon_type =

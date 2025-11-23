@@ -36,13 +36,12 @@ const defaultFlashcards = [
 export default function FlashcardScreen() {
   
   const [currentIndex, setCurrentIndex] = useState(0); 
-  const [isAnswerVisible, setIsAnswerVisible] = useState(true); 
+  const [isAnswerVisible, setIsAnswerVisible] = useState(false); 
   const { cards, filename } = useLocalSearchParams();
   const cardsString = Array.isArray(cards) ? cards[0] : cards;
   const FLASHCARDS_DATA = cardsString ? JSON.parse(cardsString) : defaultFlashcards;
   const router = useRouter();
   
-  console.log(FLASHCARDS_DATA)
   const totalCards = FLASHCARDS_DATA.length; 
   const currentCard = FLASHCARDS_DATA[currentIndex];
 

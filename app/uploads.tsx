@@ -40,7 +40,7 @@ export default function UploadsScreen() {
       <View style={styles.card}>
         <MaterialIcons name="upload-file" size={56} color="#0077B6" />
         <Text style={styles.title}>Upload Document</Text>
-        <Text style={styles.subtitle}>Pick a file from your device</Text>
+        <Text style={styles.subtitle}>Pick a file from your device to convert to flashcards</Text>
 
         <TouchableOpacity style={styles.pickButton} onPress={pickFile}>
           <Text style={styles.pickText}>Pick a file</Text>
