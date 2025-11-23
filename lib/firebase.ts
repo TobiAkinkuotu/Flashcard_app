@@ -6,6 +6,8 @@
 
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
+
+
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyC8m9jy_vcMLjSa0WBefh4kuE4CepHRyZc",
@@ -15,9 +17,6 @@ const firebaseConfig = {
   messagingSenderId: "983016849872",
   appId: "1:983016849872:web:b8218572a4e92c6bd079d5"
 };
-
-
-
 
 
 // ✅ Initialize Firebase once

@@ -44,7 +44,7 @@ export default function ViewerScreen() {
       fetch(fileUri)
         .then((res) => res.text())
         .then((json) => router.push({
-          pathname: "/flashcard",
+          pathname: "/flashcard_",
           params: {
             cards: json,
             filename: fileName

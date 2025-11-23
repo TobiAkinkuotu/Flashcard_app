@@ -46,11 +46,7 @@ return (
         </View>
 
         <View style={styles.iconsRow}>
-          <TouchableOpacity accessibilityLabel="Search">
-            <Ionicons name="search-outline" size={22} color="#fff" />
-          </TouchableOpacity>
-
-          <TouchableOpacity accessibilityLabel="Notifications" style={{ marginLeft: 10 }}>
+          <TouchableOpacity accessibilityLabel="Notifications" style={{ marginLeft: 10 }} onPress={() => router.push("/notifications")}>
             <Ionicons name="notifications-outline" size={22} color="#fff" />
           </TouchableOpacity>
 
@@ -77,7 +73,8 @@ return (
       <MenuItem icon="home-outline" label="Home" onPress={() => go("/index")} />
       <MenuItem icon="information-circle-outline" label="Account" onPress={() => go("/account")} />
       <MenuItem icon="code-slash-outline" label="AI" onPress={() => go("/ai")} />
-       <MenuItem icon="document-text-outline" label="Docs" onPress={() => go("/docs")} />
+      <MenuItem icon="document-text-outline" label="Docs" onPress={() => go("/docs")} />
+      <MenuItem icon="help-circle-outline" label="Help" onPress={() => go("/help")} />
 </View>
       )}
 
@@ -89,7 +86,6 @@ return (
       {/* Bottom navigation */}
     <View style={styles.bottomNav}>
   <NavItem route="/" icon="home-outline" label="Home" active={isActive("/")} />
-
   <NavItem route="/account" icon="person-circle-outline" label="Account" active={isActive("/account")} />
 
   <NavItem route="/ai" icon="sparkles-outline" label="AI" active={isActive("/ai")} />

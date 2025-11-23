@@ -20,6 +20,7 @@ type Props = {
   selected: boolean;
   onPress: () => void;
   onOpen:() => void;
+  onDelete:() => void;
 };
 
 const deleteFile = async (fileName: string) => {
@@ -29,26 +30,39 @@ const deleteFile = async (fileName: string) => {
 };
 
 
+// BLOCK 1 — FILE ITEM COMPONENT
 const DOUBLE_TAP_DELAY = 300; // ms
 
-const FileItem = ({ name, uri, selected, onPress, onOpen }: Props) => {
+const FileItem = ({ name, uri, selected, onPress, onOpen, onDelete }: Props) => {
   const [lastTap, setLastTap] = React.useState<number | null>(null);
 
   const handlePress = () => {
     const now = Date.now();
     if (lastTap && now - lastTap < DOUBLE_TAP_DELAY) {
-      // DOUBLE TAP DETECTED
-      // Alert.alert("Opening File...", `Page has not been created to preview ${name} 😕`);
-      console.log("opening document... uri: ", uri)
-      onOpen();
+      onOpen && onOpen(); // double tap
     } else {
-      // SINGLE TAP → normal onPress
       setLastTap(now);
-      onPress && onPress();
+      onPress && onPress(); // single tap
     }
   };
 
-  const getFileExtension = (uri: string) => uri.split('.').pop();
+  const handleLongPress = () => {
+    Alert.alert(
+      "Delete File",
+      `Are you sure you want to delete "${name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => onDelete() },
+      ]
+    );
+  };
+
+  const getFileExtension = (uri: string) => uri.split(".").pop();
+  let FlashCardName = 
+  getFileExtension(uri) === "json"
+      ? name.split(".")[0] + " • FlashCard"
+      : name;
+  
   const icon_type =
     getFileExtension(uri) === "json"
       ? "layers-outline"
@@ -57,12 +71,14 @@ const FileItem = ({ name, uri, selected, onPress, onOpen }: Props) => {
   return (
     <Pressable
       onPress={handlePress}
+      onLongPress={handleLongPress}
+      delayLongPress={500}
       style={[styles.fileItem, selected && styles.selectedItem]}
     >
       <Ionicons name={icon_type} size={28} color="#0A7F42" />
 
       <View style={{ flex: 1, marginLeft: 10 }}>
-        <Text style={styles.fileTitle}>{name}</Text>
+        <Text style={styles.fileTitle}>{FlashCardName}</Text>
       </View>
 
       {selected ? (
@@ -76,7 +92,8 @@ const FileItem = ({ name, uri, selected, onPress, onOpen }: Props) => {
   );
 };
 
-const FilesList: React.FC = () => {
+// BLOCK 2 — FILE LIST COMPONENT WITH SEARCH
+const FilesList: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
   const [files, setFiles] = useState<FileInfo[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedUri, setSelectedUri] = useState<string | null>(null);
@@ -86,18 +103,14 @@ const FilesList: React.FC = () => {
       try {
         const items = await docDir.list();
 
-        const filesWithInfo: FileInfo[] = await Promise.all(
-          items.map(async (item) => {
-            return {
-              name: item.name,
-              uri: item.uri,
-            };
-          })
-        );
+        const filesWithInfo: FileInfo[] = items.map((item) => ({
+          name: item.name,
+          uri: item.uri,
+        }));
 
         setFiles(filesWithInfo);
       } catch (e) {
-        console.error('Error loading files:', e);
+        console.error("Error loading files:", e);
       } finally {
         setLoading(false);
       }
@@ -105,6 +118,25 @@ const FilesList: React.FC = () => {
 
     loadFiles();
   }, []);
+
+  // DELETE FUNCTION
+  const deleteFile = async (name: string) => {
+    try {
+      const file = new File(docDir, name);
+      await file.delete();
+
+      setFiles((prev) => prev.filter((f) => f.name !== name));
+
+      console.log("Deleted:", name);
+    } catch (error) {
+      console.log("Delete error:", error);
+    }
+  };
+
+  // FILTER BASED ON SEARCH
+  const filteredFiles = files.filter((file) =>
+    file.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -114,39 +146,41 @@ const FilesList: React.FC = () => {
     );
   }
 
-  if (files.length === 0) {
+  if (filteredFiles.length === 0) {
     return (
       <View style={styles.center}>
-        <Text>No files found in document directory.</Text>
+        <Text>No matching files found.</Text>
       </View>
     );
   }
 
   return (
     <FlatList
-      data={files}
+      data={filteredFiles}
       keyExtractor={(item) => item.uri}
       renderItem={({ item }) => (
-      <FileItem
-        name={item.name}
-        uri={item.uri}
-        selected={selectedUri === item.uri}
-        onPress={() => setSelectedUri(item.uri)}
-        onOpen={()=>  router.push({
-            pathname: "/file_viewer",
-            params: {
-              name: item.name, 
-              uri: item.uri},
-          })}
-      />
+        <FileItem
+          name={item.name}
+          uri={item.uri}
+          selected={selectedUri === item.uri}
+          onPress={() => setSelectedUri(item.uri)}
+          onDelete={() => deleteFile(item.name)}
+          onOpen={() =>
+            router.push({
+              pathname: "/file_viewer",
+              params: { name: item.name, uri: item.uri },
+            })
+          }
+        />
       )}
     />
   );
 };
 
-
-
+// BLOCK 3 — FULL SCREEN
 export default function ResourcesScreen() {
+  const [searchQuery, setSearchQuery] = useState("");
+
   return (
     <View style={styles.container}>
       {/* Header Section */}
@@ -164,23 +198,20 @@ export default function ResourcesScreen() {
         <Text style={styles.uploadLabel}>Upload New Document</Text>
       </TouchableOpacity>
 
-      {/* Convert Button */}
-      <TouchableOpacity
-        style={styles.convertButton}
-        onPress={() => router.push("/flashcards")}
-      >
-        <Text style={styles.convertText}>Convert Selected to FlashCards</Text>
-      </TouchableOpacity>
-
       {/* Search Bar */}
       <View style={styles.searchBox}>
         <Ionicons name="search" size={20} color="#999" style={{ marginRight: 6 }} />
-        <TextInput placeholder="Search Files..." style={styles.searchInput} />
+        <TextInput
+          placeholder="Search Files..."
+          style={styles.searchInput}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
       </View>
 
-      <FilesList />
+      {/* File List */}
+      <FilesList searchQuery={searchQuery} />
     </View>
-    
   );
 }
 
