@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; 
 
-// --- BACKEND (MOCK DATA) ---
+
 const FLASHCARDS_DATA = [
   {
     id: '1',
@@ -29,7 +29,7 @@ const FLASHCARDS_DATA = [
   },
 ];
 
-// --- FRONTEND (UI) ---
+
 export default function FlashcardScreen() {
   
   const [currentIndex, setCurrentIndex] = useState(0); 
@@ -38,7 +38,7 @@ export default function FlashcardScreen() {
   const totalCards = 20; 
   const currentCard = FLASHCARDS_DATA[currentIndex];
 
-  // Calculate Progress
+  
   const progressWidth = ((currentIndex + 1) / totalCards) * 100;
 
   const handleNextCard = () => {
@@ -54,7 +54,7 @@ export default function FlashcardScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* 1. Header */}
+      
       <View style={styles.header}>
         <TouchableOpacity>
           <Ionicons name="chevron-back" size={28} color="black" />
@@ -65,17 +65,17 @@ export default function FlashcardScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 2. Main Content */}
+      
       <View style={styles.content}>
         
-        {/* The Flashcard */}
+        
         <View style={styles.card}>
           <Text style={styles.questionText}>
             {currentCard ? currentCard.question : "No card data found"}
           </Text>
         </View>
 
-        {/* Show Answer Button */}
+        
         <TouchableOpacity 
           style={styles.showAnswerBtn}
           onPress={() => setIsAnswerVisible(!isAnswerVisible)}
@@ -85,8 +85,8 @@ export default function FlashcardScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Answer Section */}
-        {isAnswerVisible && (
+        
+      {isAnswerVisible && (
           <View style={styles.answerBox}>
             <Text style={styles.answerText}>
               {currentCard ? currentCard.answer : ""}
@@ -104,23 +104,23 @@ export default function FlashcardScreen() {
         )}
       </View>
 
-      {/* 3. Bottom Section (Recall & Progress) */}
+      
       <View style={styles.bottomSection}>
         <Text style={styles.recallLabel}>Rate your recall</Text>
         
         <View style={styles.recallButtons}>
-          {/* Green Check - Moves to next card */}
+        
           <TouchableOpacity style={styles.iconButton} onPress={handleNextCard}>
               <Ionicons name="checkmark" size={40} color="#22C55E" />
           </TouchableOpacity>
           
-          {/* Red X - Moves to next card */}
+        
           <TouchableOpacity style={styles.iconButton} onPress={handleNextCard}>
             <Ionicons name="close" size={40} color="#EF4444" />
           </TouchableOpacity>
         </View>
 
-        {/* Progress Bar */}
+        
         <View style={styles.progressBarContainer}>
           <View style={[styles.progressBarFill, { width: `${progressWidth}%` }]} />
         </View>
@@ -134,7 +134,7 @@ export default function FlashcardScreen() {
   );
 }
 
-// --- STYLES ---
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
