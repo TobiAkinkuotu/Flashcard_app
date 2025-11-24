@@ -1,5 +1,7 @@
 import {useState, useRef, useEffect, useCallback } from "react";
 import Markdown from "react-native-markdown-display";
+import * as SecureStore from "expo-secure-store";
+
 import {
   View,
   Text,
@@ -32,8 +34,8 @@ interface Message {
 }
 
 // --- CONFIGURATION ---
-const API_KEY = "AIzaSyAOkOjQJ0XYiA4Bn6ZFRWhIe6x30mgaVD0"; 
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+const API_KEY = "AIzaSyDO1IzSIgDtmeX6RKX4m-QvwBrIX2_3RHJU"
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 const MAX_INPUT_HEIGHT = 120;
 const MIN_INPUT_HEIGHT = 50;
 
