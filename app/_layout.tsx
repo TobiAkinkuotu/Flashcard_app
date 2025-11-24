@@ -9,100 +9,121 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  Platform,
 } from "react-native";
 
+// --- LIGHT THEME CONFIGURATION ---
+const HEADER_COLOR = "#9000ffff";    // Deep Cyan/Blue for the header
+const PRIMARY_BG = "#FFFFFF";      // Pure White for main background elements
+const SECONDARY_BG = "#F9F9F9";    // Very light gray for content area background
+const ACCENT_COLOR = "#FFA800";    // Vibrant Gold/Orange for active elements
+const TEXT_COLOR = "#333333";      // Dark Gray for primary text (in light areas)
+const SUBTITLE_COLOR = "#C0C0C0";  // Light Gray for secondary text (on dark header)
+const BORDER_COLOR = "#E0E0E0";    // Light border color
+
 // Configuration for header content based on route
-const routeConfig: Record<string, { title: string; subtitle: string; icon: any}> = {
-  "/": { title: "Home", subtitle: "Welcome back!", icon: "home"},
-  "/index": { title: "Home", subtitle: "Welcome back!", icon: "home"},
-  "/account": { title: "My Account", subtitle: "Manage your profile and settings", icon: "person-circle-outline"},
-  "/ai": { title: "AI Assistant", subtitle: "Ask your questions here", icon: "sparkles-outline"},
-  "/docs": { title: "Documents", subtitle: "Access all flash cards and documents", icon: "folder-open-outline"},
+const routeConfig = {
+  "/": { title: "Home", subtitle: "Your centralized learning space", icon: "home"},
+  "/index": { title: "Recallr Hub", subtitle: "Your centralized learning space", icon: "home"},
+  "/account": { title: "Profile", subtitle: "Manage your account settings", icon: "person-circle-outline"},
+  "/ai": { title: "Juno AI", subtitle: "Chat with your intelligent assistant", icon: "sparkles"},
+  "/docs": { title: "Document Library", subtitle: "Access all flash cards and documents", icon: "folder-open-outline"},
   "/notifications": { title: "Notifications", subtitle: "View your recent alerts", icon: "notifications-outline"},
-  "/help": { title: "Help Center", subtitle: "Find answers and support", icon: "help-circle-outline"},
-  "/flashcard_": { title: "FlashCards", subtitle: "test your knowledge on documents.", icon: "layers-outline"},
-  // Add other routes as needed
-  // Default for unknown routes:
-  // default: { title: "Resources", subtitle: "Upload and learn from Resources" },
+  "/help": { title: "Support", subtitle: "Find answers and help documentation", icon: "help-circle-outline"},
+  "/flashcard_": { title: "FlashCards", subtitle: "Test your knowledge on documents.", icon: "layers-outline"},
 };
 
+// --- MAIN LAYOUT COMPONENT ---
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  // scale animation for active tab (kept as is)
+  // Scale animation for active tab selection
   const scaleAnim = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     Animated.sequence([
-      Animated.timing(scaleAnim, { toValue: 1.12, duration: 120, useNativeDriver: true }),
-      Animated.timing(scaleAnim, { toValue: 1, duration: 120, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1.15, duration: 150, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
     ]).start();
   }, [pathname]);
 
-  const isActive = (route: string) => pathname === route || (route === '/' && pathname === '/index'); // Handle '/' and '/index' as active for home
+  const isActive = (route) => pathname === route || (route === '/' && pathname === '/index');
 
-  // navigate and close menu
-  const go = (route: string) => {
+  // Navigate and close menu
+  const go = (route) => {
     setMenuOpen(false);
     router.push(route);
   };
 
   const getHeaderContent = () => {
     const key = pathname in routeConfig ? pathname : '/';
-    return routeConfig[key] || { title: "Resources", subtitle: "Upload and learn from Resources" };
+    return routeConfig[key] || routeConfig["/"];
   };
 
   const { title, subtitle, icon } = getHeaderContent();
 
   return (
-    // Use SafeAreaView for the main container
-    <SafeAreaView style={styles.container}> 
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {/* The icon is now dynamic based on the active route's primary intent, but keeping folder-open-outline for 'Resources' feel or you can make it dynamic too */}
-            <Ionicons name={icon} size={20} color="#000" style={{ marginRight: 6 }} />
-            <Text style={styles.headerTitle}>{title}</Text> {/* 👈 Dynamic Title */}
-          </View>
-          <Text style={styles.headerSubtitle}>{subtitle}</Text> {/* 👈 Dynamic Subtitle */}
-        </View>
+    // Root container to contain everything and define the overflow color
+    <View style={styles.rootContainer}> 
+      
+      {/* Header Background View: Fills the entire top area (including status bar) */}
+      <View style={styles.headerBackground}>
+        {/* Header Content: Pushed down by SafeAreaView to sit below the status bar */}
+        <SafeAreaView>
+            <View style={styles.headerContentWrapper}>
+                <View>
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        {/* Icon color for dark header */}
+                        <Ionicons name={icon} size={22} color={ACCENT_COLOR} style={{ marginRight: 8 }} />
+                        {/* Text color for dark header */}
+                        <Text style={styles.headerTitle}>{title}</Text>
+                    </View>
+                    {/* Subtitle color for dark header */}
+                    <Text style={styles.headerSubtitle}>{subtitle}</Text>
+                </View>
 
-        <View style={styles.iconsRow}>
-          <TouchableOpacity accessibilityLabel="Notifications" style={{ marginLeft: 10 }} onPress={() => router.push("/notifications")}>
-            <Ionicons name="notifications-outline" size={22} color="#000" />
-          </TouchableOpacity>
+                <View style={styles.iconsRow}>
+                    <TouchableOpacity 
+                        accessibilityLabel="Notifications" 
+                        style={styles.headerButton} 
+                        onPress={() => router.push("/notifications")}
+                    >
+                        <Ionicons name="notifications-outline" size={24} color={PRIMARY_BG} />
+                    </TouchableOpacity>
 
-          <TouchableOpacity
-            accessibilityLabel="Menu"
-            onPress={() => setMenuOpen((s) => !s)}
-            style={{ marginLeft: 10 }}
-          >
-            <MaterialCommunityIcons name="dots-vertical" size={25} color="#000" />
-          </TouchableOpacity>
-        </View>
+                    <TouchableOpacity
+                        accessibilityLabel="Menu"
+                        onPress={() => setMenuOpen((s) => !s)}
+                        style={styles.headerButton}
+                    >
+                        <MaterialCommunityIcons name="dots-vertical" size={26} color={PRIMARY_BG} />
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </SafeAreaView>
       </View>
+
 
       {/* Overlay to close when tapping outside */}
       {menuOpen && (
         <TouchableWithoutFeedback onPress={() => setMenuOpen(false)}>
+          {/* Overlay is positioned absolutely over the content area */}
           <View style={styles.overlay} />
         </TouchableWithoutFeedback>
       )}
 
-      {/* Dropdown Menu */}
+      {/* Dropdown Menu: Positioned relative to the viewport */}
       {menuOpen && (
       <View style={styles.menuContainer}>
-      {/* Menu items adjusted to use correct routes */}
-      <MenuItem icon="home-outline" label="Home" onPress={() => go("/")} /> 
-      <MenuItem icon="information-circle-outline" label="Account" onPress={() => go("/account")} />
-      <MenuItem icon="code-slash-outline" label="AI" onPress={() => go("/ai")} />
-      <MenuItem icon="document-text-outline" label="Docs" onPress={() => go("/docs")} />
-      <MenuItem icon="help-circle-outline" label="Help" onPress={() => go("/help")} />
-</View>
+          <MenuItem icon="home-outline" label="Home" onPress={() => go("/")} /> 
+          <MenuItem icon="person-circle-outline" label="Account" onPress={() => go("/account")} />
+          <MenuItem icon="sparkles-outline" label="AI Assistant" onPress={() => go("/ai")} />
+          <MenuItem icon="document-text-outline" label="Documents" onPress={() => go("/docs")} />
+          <MenuItem icon="help-circle-outline" label="Help" onPress={() => go("/help")} />
+      </View>
       )}
 
-      {/* Content: Must be flexible to push the SafeAreaView's bottom edge down */}
+      {/* Content */}
       <View style={styles.content}>
         <Slot />
       </View>
@@ -110,24 +131,23 @@ export default function Layout() {
       {/* Bottom navigation - Wrapped in a separate SafeAreaView */}
       <SafeAreaView style={styles.bottomNavContainer}> 
         <View style={styles.bottomNav}>
-          <NavItem route="/" icon="home-outline" label="Home" active={isActive("/")} />
-          <NavItem route="/ai" icon="sparkles-outline" label="AI" active={isActive("/ai")} />
-          <NavItem route="/docs" icon="document-text-outline" label="Docs" active={isActive("/docs")} />
-          <NavItem route="/account" icon="person-circle-outline" label="Account" active={isActive("/account")} />
+          <NavItem route="/" icon="home-outline" label="Home" active={isActive("/")} scaleAnim={scaleAnim} />
+          <NavItem route="/ai" icon="sparkles-outline" label="AI" active={isActive("/ai")} scaleAnim={scaleAnim} />
+          <NavItem route="/docs" icon="document-text-outline" label="Docs" active={isActive("/docs")} scaleAnim={scaleAnim} />
+          <NavItem route="/account" icon="person-circle-outline" label="Account" active={isActive("/account")} scaleAnim={scaleAnim} />
         </View>
       </SafeAreaView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-/* NavItem */
-/* NavItem – fluid animation version (kept as is) */
-function NavItem({ route, icon, label, active }: any) {
+// --- NAV ITEM COMPONENT ---
+function NavItem({ route, icon, label, active, scaleAnim }) {
   const scale = useRef(new Animated.Value(1)).current;
 
   const pressIn = () => {
     Animated.spring(scale, {
-      toValue: 0.88,
+      toValue: 0.9,
       useNativeDriver: true,
       speed: 20,
     }).start();
@@ -139,7 +159,9 @@ function NavItem({ route, icon, label, active }: any) {
       useNativeDriver: true,
       speed: 20,
     }).start(() => {
-      router.push(route);
+      if (!active) {
+          router.push(route);
+      }
     });
   };
 
@@ -147,14 +169,14 @@ function NavItem({ route, icon, label, active }: any) {
     <TouchableOpacity
       onPressIn={pressIn}
       onPressOut={pressOut}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
       style={styles.navItem}
     >
-      <Animated.View style={{ transform: [{ scale }] }}>
+      <Animated.View style={{ transform: [{ scale: active ? scaleAnim : scale }] }}>
         <Ionicons
-          name={icon as any}
-          size={26}
-          color={active ? "#FFA800" : "#555"}
+          name={icon}
+          size={28}
+          color={active ? ACCENT_COLOR : SUBTITLE_COLOR}
         />
       </Animated.View>
 
@@ -166,108 +188,156 @@ function NavItem({ route, icon, label, active }: any) {
 }
 
 
-/* MenuItem (kept as is) */
-function MenuItem({ icon, label, onPress }: any) {
+// --- MENU ITEM COMPONENT ---
+function MenuItem({ icon, label, onPress }) {
   return (
     <TouchableOpacity onPress={onPress} style={styles.menuItem}>
-      <Ionicons name={icon as any} size={18} color="#333" />
+      <Ionicons name={icon} size={20} color={ACCENT_COLOR} />
       <Text style={styles.menuText}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
-/* Styles */
+// --- STYLESHEET ---
 const styles = StyleSheet.create({
-  // Main container is now SafeAreaView, so it handles top inset automatically
-  container: { 
+  rootContainer: { 
     flex: 1, 
-    backgroundColor: "#fff" 
+    // Setting this background color is only useful if the content itself has transparent areas.
+    // However, the headerBackground handles the primary color bleed.
+    backgroundColor: SECONDARY_BG, 
   },
 
-  header: {
-    backgroundColor: "transparent",
+  headerBackground: {
+    backgroundColor: HEADER_COLOR,
+    // Subtle shadow cast down from the header
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 6,
+    zIndex: 10,
+  },
+  
+  headerContentWrapper: {
+    // This wrapper replaces the old styles.header and provides internal padding/layout
     paddingHorizontal: 20,
-    // Changed paddingTop to be relative to the Safe Area, usually the main SafeAreaView handles it, 
-    // but in case the header needs to fill the space, we set a smaller padding here.
-    paddingTop: 12, 
+    paddingTop: 8, // Reduced padding since SafeAreaView handles the top inset
     paddingBottom: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderBottomLeftRadius: 14,
-    borderBottomRightRadius: 14,
-    zIndex: 10,
   },
 
-  headerTitle: { color: "#000", fontSize: 18, fontWeight: "700" },
-  headerSubtitle: { color: "#000", fontSize: 12, opacity: 0.9, marginTop: 1 },
+  headerTitle: { 
+    color: PRIMARY_BG, // White text on dark header
+    fontSize: 22, 
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  headerSubtitle: { 
+    color: SUBTITLE_COLOR, // Light gray subtitle on dark header
+    fontSize: 13, 
+    opacity: 0.9, 
+    marginTop: 4,
+    fontWeight: '500'
+  },
 
-  iconsRow: { flexDirection: "row", alignItems: "center" },
+  iconsRow: { 
+    flexDirection: "row", 
+    alignItems: "center" 
+  },
+  headerButton: {
+    marginLeft: 15,
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)', // Subtle button background
+  },
 
   overlay: {
     position: "absolute",
-    top: 0,
+    top: 0, // Overlay spans the whole viewport
     left: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     zIndex: 8,
   },
 
   menuContainer: {
     position: "absolute",
-    right: 12,
-    top: 60, // Adjusted top value for slightly less padding
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    paddingVertical: 6,
-    width: 180,
-    elevation: 6,
+    right: 18,
+    // Position menu to appear just below the header bar, relative to the viewport top
+    top: Platform.OS === 'ios' ? 100 : 70, 
+    backgroundColor: PRIMARY_BG,
+    borderRadius: 12,
+    paddingVertical: 8,
+    width: 200,
+    elevation: 10,
     zIndex: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: TEXT_COLOR, 
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    borderWidth: 1,
+    borderColor: BORDER_COLOR,
   },
 
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     gap: 10,
   },
   menuText: {
-    fontSize: 14,
-    color: "#333",
-    fontWeight: "500",
-    marginLeft: 8,
+    fontSize: 16,
+    color: TEXT_COLOR,
+    fontWeight: "600",
   },
 
-  // Content needs to have a bottom margin equal to the height of the bottom nav to prevent overlap
-  content: { flex: 1, padding: 12, marginBottom: 70 }, 
+  // Content starts immediately below the fixed header
+  content: { 
+    flex: 1, 
+    padding: 16, 
+    marginBottom: 80, 
+    backgroundColor: SECONDARY_BG, // Light background for the content area
+  }, 
 
-  // New container for bottom navigation to ensure safe area at the bottom
+  // Bottom Nav Container (Wrapper for SafeArea)
   bottomNavContainer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#fff", // Match this with your bottomNav background
-    elevation: 10,
+    backgroundColor: PRIMARY_BG, 
+    elevation: 8, 
     zIndex: 10,
+    borderTopWidth: 1,
+    borderColor: BORDER_COLOR,
   },
 
-  // The bottomNav itself is now inside the SafeAreaView, so it's only responsible for internal layout
+  // The actual navigation bar styling
   bottomNav: {
-    height: 65, // Fixed height for the actual navigation bar content
+    height: 75, 
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    borderTopWidth: 1,
-    borderColor: "#ddd",
   },
 
-  navItem: { alignItems: "center" },
-  navText: { fontSize: 11, marginTop: 4, color: "#555", fontWeight: "500" },
-  activeNavText: { color: "#FFA800", fontWeight: "700" },
+  navItem: { 
+    alignItems: "center",
+    padding: 8,
+    minWidth: 70, 
+  },
+  navText: { 
+    fontSize: 12, 
+    marginTop: 4, 
+    color: SUBTITLE_COLOR, 
+    fontWeight: "600" 
+  },
+  activeNavText: { 
+    color: ACCENT_COLOR, 
+    fontWeight: "800" 
+  },
 });
+
