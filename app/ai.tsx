@@ -34,8 +34,8 @@ interface Message {
 }
 
 // --- CONFIGURATION ---
-const API_KEY = "AIzaSyDO1IzSIgDtmeX6RKX4m-QvwBrIX2_3RHJU"
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+const API_KEY = "AIzaSyDO1lzSIgDtmeX6RKX4mQvwBrlX2_3RHJU"
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 const MAX_INPUT_HEIGHT = 120;
 const MIN_INPUT_HEIGHT = 50;
 

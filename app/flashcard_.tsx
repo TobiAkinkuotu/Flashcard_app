@@ -95,29 +95,34 @@ export default function FlashcardScreen() {
 
         {/* Answer Section */}
         {isAnswerVisible && (
+          <View>
           <View style={styles.answerBox}>
             <Text style={styles.answerText}>
               {currentCard ? currentCard.answer : ""}
             </Text>
+          </View>
+
+
+          <Text style={styles.recallLabel}>Rate your recall</Text>
+        
+          <View style={styles.recallButtons}>
+            {/* Green Check - Moves to next card */}
+            <TouchableOpacity style={styles.iconButton} onPress={handleNextCard}>
+                <Ionicons name="checkmark" size={40} color="#22C55E" />
+            </TouchableOpacity>
+            
+            {/* Red X - Moves to next card */}
+            <TouchableOpacity style={styles.iconButton} onPress={handleNextCard}>
+              <Ionicons name="close" size={40} color="#EF4444" />
+            </TouchableOpacity>
+          </View>
           </View>
         )}
       </View>
 
       {/* 3. Bottom Section (Recall & Progress) */}
       <View style={styles.bottomSection}>
-        <Text style={styles.recallLabel}>Rate your recall</Text>
         
-        <View style={styles.recallButtons}>
-          {/* Green Check - Moves to next card */}
-          <TouchableOpacity style={styles.iconButton} onPress={handleNextCard}>
-              <Ionicons name="checkmark" size={40} color="#22C55E" />
-          </TouchableOpacity>
-          
-          {/* Red X - Moves to next card */}
-          <TouchableOpacity style={styles.iconButton} onPress={handleNextCard}>
-            <Ionicons name="close" size={40} color="#EF4444" />
-          </TouchableOpacity>
-        </View>
 
         {/* Progress Bar */}
         <View style={styles.progressBarContainer}>

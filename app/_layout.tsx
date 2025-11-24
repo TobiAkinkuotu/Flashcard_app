@@ -1,5 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { Slot, router, usePathname } from "expo-router";
+import { RelativePathString, Slot, router, usePathname } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -24,7 +24,7 @@ const BORDER_COLOR = "#E0E0E0";    // Light border color
 // Configuration for header content based on route
 const routeConfig = {
   "/": { title: "Home", subtitle: "Your centralized learning space", icon: "home"},
-  "/login": { title: "Login", subtitle: "Login into Recallr_", icon: "login"},
+  "/login": { title: "Login", subtitle: "Login into Recallr_", icon: "log-in-outline"},
   "/index": { title: "Recallr Hub", subtitle: "Your centralized learning space", icon: "home"},
   "/account": { title: "Profile", subtitle: "Manage your account settings", icon: "person-circle-outline"},
   "/ai": { title: "Juno AI", subtitle: "Chat with your intelligent assistant", icon: "sparkles"},
@@ -48,7 +48,7 @@ export default function Layout() {
     ]).start();
   }, [pathname]);
 
-  const isActive = (route) => pathname === route || (route === '/' && pathname === '/index');
+  const isActive = (route: string) => pathname === route || (route === '/' && pathname === '/index');
 
   // Navigate and close menu
   const go = (route) => {
